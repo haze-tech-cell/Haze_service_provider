@@ -6,8 +6,9 @@ import com.haze.servicesprovider.di.ServiceLocator
 import com.haze.servicesprovider.domain.model.Lead
 import com.haze.servicesprovider.domain.model.LeadStatus
 import com.haze.servicesprovider.domain.usecase.GetLeadsUseCase
+import com.haze.servicesprovider.domain.usecase.GetProfileUseCase
+import com.haze.servicesprovider.domain.usecase.SendQuotationUseCase
 import com.haze.servicesprovider.domain.usecase.UpdateLeadStatusUseCase
-import com.haze.servicesprovider.presentation.common.Resource
 import com.haze.servicesprovider.presentation.common.UiEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ data class LeadsUiState(
 enum class LeadFilter(val displayName: String) {
     ALL("All"),
     NEW("New"),
+    QUOTED("Quoted"),
     ACCEPTED("Accepted"),
     REJECTED("Rejected"),
     COMPLETED("Completed")
@@ -35,7 +37,9 @@ enum class LeadFilter(val displayName: String) {
 
 class LeadsViewModel(
     private val getLeadsUseCase: GetLeadsUseCase = ServiceLocator.getLeadsUseCase,
-    private val updateLeadStatusUseCase: UpdateLeadStatusUseCase = ServiceLocator.updateLeadStatusUseCase
+    private val updateLeadStatusUseCase: UpdateLeadStatusUseCase = ServiceLocator.updateLeadStatusUseCase,
+    private val sendQuotationUseCase: SendQuotationUseCase = ServiceLocator.sendQuotationUseCase,
+    private val getProfileUseCase: GetProfileUseCase = ServiceLocator.getProfileUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeadsUiState(isLoading = true))
@@ -45,17 +49,31 @@ class LeadsViewModel(
     val eventFlow: SharedFlow<UiEvent> = _eventFlow.asSharedFlow()
 
     private var currentProviderId: String? = null
+    private var providerCity: String? = null
+    private var providerCategory: String? = null
 
     init {
         currentProviderId = ServiceLocator.authRepository.getCurrentUserId()
-        loadLeads()
+        loadProviderProfileAndLeads()
+    }
+
+    private fun loadProviderProfileAndLeads() {
+        val providerId = currentProviderId ?: ServiceLocator.authRepository.getCurrentUserId() ?: return
+        viewModelScope.launch {
+            val profileResult = getProfileUseCase(providerId)
+            profileResult.onSuccess { profile ->
+                providerCity = profile?.city
+                providerCategory = profile?.serviceCategory
+            }
+            loadLeads()
+        }
     }
 
     fun loadLeads() {
         val providerId = currentProviderId ?: ServiceLocator.authRepository.getCurrentUserId() ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = getLeadsUseCase(providerId)
+            val result = getLeadsUseCase(providerId, providerCity, providerCategory)
             result.fold(
                 onSuccess = { leads ->
                     _uiState.value = _uiState.value.copy(
@@ -81,6 +99,44 @@ class LeadsViewModel(
 
     fun onLeadSelected(lead: Lead?) {
         _uiState.value = _uiState.value.copy(selectedLeadForDetail = lead)
+    }
+
+    fun sendQuotation(leadId: String, visitingCharges: Double, estimatedArrival: String, notes: String?) {
+        val providerId = currentProviderId ?: ServiceLocator.authRepository.getCurrentUserId() ?: return
+        viewModelScope.launch {
+            val result = sendQuotationUseCase(
+                leadId = leadId,
+                providerId = providerId,
+                visitingCharges = visitingCharges,
+                estimatedArrival = estimatedArrival,
+                notes = notes
+            )
+            result.fold(
+                onSuccess = {
+                    val updatedList = _uiState.value.allLeads.map { lead ->
+                        if (lead.id == leadId) {
+                            lead.copy(
+                                providerId = providerId,
+                                status = LeadStatus.QUOTED,
+                                visitingCharges = visitingCharges,
+                                quotedAmount = visitingCharges,
+                                estimatedArrival = estimatedArrival,
+                                providerNotes = notes
+                            )
+                        } else lead
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        allLeads = updatedList,
+                        filteredLeads = filterLeads(updatedList, _uiState.value.selectedFilter),
+                        selectedLeadForDetail = null
+                    )
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Quotation of ₹${visitingCharges.toInt()} sent to customer!"))
+                },
+                onFailure = { error ->
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Failed to send quote: ${error.localizedMessage}"))
+                }
+            )
+        }
     }
 
     fun acceptLead(leadId: String) {
@@ -123,6 +179,7 @@ class LeadsViewModel(
         return when (filter) {
             LeadFilter.ALL -> leads
             LeadFilter.NEW -> leads.filter { it.status == LeadStatus.NEW }
+            LeadFilter.QUOTED -> leads.filter { it.status == LeadStatus.QUOTED }
             LeadFilter.ACCEPTED -> leads.filter { it.status == LeadStatus.ACCEPTED }
             LeadFilter.REJECTED -> leads.filter { it.status == LeadStatus.REJECTED }
             LeadFilter.COMPLETED -> leads.filter { it.status == LeadStatus.COMPLETED }

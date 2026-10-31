@@ -87,6 +87,9 @@ fun LeadsScreen(
             onAccept = { viewModel.acceptLead(uiState.selectedLeadForDetail!!.id) },
             onReject = { viewModel.rejectLead(uiState.selectedLeadForDetail!!.id) },
             onComplete = { viewModel.completeLead(uiState.selectedLeadForDetail!!.id) },
+            onSendQuotation = { charges, arrival, notes ->
+                viewModel.sendQuotation(uiState.selectedLeadForDetail!!.id, charges, arrival, notes)
+            },
             onDismissRequest = { viewModel.onLeadSelected(null) }
         )
     }

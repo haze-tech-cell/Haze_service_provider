@@ -25,18 +25,28 @@ class LeadRepositoryImpl(
 
     override fun observeLeads(providerId: String): Flow<List<Lead>> = _leadsFlow.asStateFlow()
 
-    override suspend fun getLeads(providerId: String): Result<List<Lead>> = withContext(ioDispatcher) {
+    override suspend fun getLeads(
+        providerId: String,
+        city: String?,
+        category: String?
+    ): Result<List<Lead>> = withContext(ioDispatcher) {
         runCatching {
             val dtoList = supabaseProvider.postgrest.from("leads")
                 .select {
-                    filter {
-                        eq("provider_id", providerId)
-                    }
                     order(column = "created_at", order = Order.DESCENDING)
                 }
                 .decodeList<LeadDto>()
 
-            val domainLeads = dtoList.map { it.toDomain() }
+            val domainLeads = dtoList.map { it.toDomain() }.filter { lead ->
+                val isMyLead = lead.providerId == providerId
+                val isBroadcastForMyCity = lead.providerId == null && (
+                    city.isNullOrBlank() || lead.city.contains(city, ignoreCase = true) || city.contains(lead.city, ignoreCase = true)
+                ) && (
+                    category.isNullOrBlank() || lead.serviceCategory.contains(category, ignoreCase = true) || category.contains(lead.serviceCategory, ignoreCase = true)
+                )
+                isMyLead || isBroadcastForMyCity
+            }
+
             _leadsFlow.value = domainLeads
             domainLeads
         }
@@ -57,10 +67,54 @@ class LeadRepositoryImpl(
                     }
                 }
 
-            // Update in local memory flow as well
             val currentList = _leadsFlow.value
             _leadsFlow.value = currentList.map { lead ->
                 if (lead.id == leadId) lead.copy(status = status, updatedAt = nowIso) else lead
+            }
+        }
+    }
+
+    override suspend fun sendQuotation(
+        leadId: String,
+        providerId: String,
+        visitingCharges: Double,
+        estimatedArrival: String,
+        notes: String?
+    ): Result<Unit> = withContext(ioDispatcher) {
+        runCatching {
+            val nowIso = DateUtils.getCurrentIsoTimestamp()
+            val updatePayload = buildJsonObject {
+                put("provider_id", providerId)
+                put("status", LeadStatus.QUOTED.value)
+                put("visiting_charges", visitingCharges)
+                put("quoted_amount", visitingCharges)
+                put("estimated_arrival", estimatedArrival)
+                if (!notes.isNullOrBlank()) {
+                    put("provider_notes", notes)
+                }
+                put("updated_at", nowIso)
+            }
+
+            supabaseProvider.postgrest.from("leads")
+                .update(updatePayload) {
+                    filter {
+                        eq("id", leadId)
+                    }
+                }
+
+            val currentList = _leadsFlow.value
+            _leadsFlow.value = currentList.map { lead ->
+                if (lead.id == leadId) {
+                    lead.copy(
+                        providerId = providerId,
+                        status = LeadStatus.QUOTED,
+                        visitingCharges = visitingCharges,
+                        quotedAmount = visitingCharges,
+                        estimatedArrival = estimatedArrival,
+                        providerNotes = notes,
+                        updatedAt = nowIso
+                    )
+                } else lead
             }
         }
     }

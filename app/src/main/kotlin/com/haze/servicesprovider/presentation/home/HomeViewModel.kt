@@ -82,7 +82,8 @@ class HomeViewModel(
 
     private fun loadLeads(providerId: String) {
         viewModelScope.launch {
-            val leadsResult = getLeadsUseCase(providerId)
+            val profile = _uiState.value.profile
+            val leadsResult = getLeadsUseCase(providerId, profile?.city, profile?.serviceCategory)
             val list = leadsResult.getOrDefault(emptyList())
             _uiState.value = _uiState.value.copy(recentLeads = list.take(3))
         }

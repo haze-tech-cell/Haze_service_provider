@@ -106,4 +106,8 @@ object ServiceLocator {
     val updateLeadStatusUseCase: UpdateLeadStatusUseCase by lazy {
         UpdateLeadStatusUseCase(leadRepository)
     }
+
+    val sendQuotationUseCase: com.haze.servicesprovider.domain.usecase.SendQuotationUseCase by lazy {
+        com.haze.servicesprovider.domain.usecase.SendQuotationUseCase(leadRepository)
+    }
 }

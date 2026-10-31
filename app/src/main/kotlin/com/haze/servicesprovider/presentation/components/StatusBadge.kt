@@ -31,9 +31,11 @@ fun StatusBadge(
 ) {
     val (bgColor, textColor) = when (status) {
         LeadStatus.NEW -> ProfessionalBlueLight to ProfessionalBlue
+        LeadStatus.QUOTED -> Color(0xFFEDE9FE) to Color(0xFF6D28D9) // Purple
         LeadStatus.ACCEPTED -> SuccessGreenLight to SuccessGreen
         LeadStatus.REJECTED -> ErrorRedLight to ErrorRed
         LeadStatus.COMPLETED -> WarningAmberLight to WarningAmber
+        LeadStatus.CANCELLED -> Color(0xFFF1F5F9) to Color(0xFF64748B)
     }
 
     Box(

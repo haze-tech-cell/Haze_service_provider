@@ -13,14 +13,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CurrencyRupee
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,22 +33,28 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haze.servicesprovider.domain.model.Lead
 import com.haze.servicesprovider.domain.model.LeadStatus
 import com.haze.servicesprovider.presentation.components.StatusBadge
-import com.haze.servicesprovider.presentation.theme.CardBorder
 import com.haze.servicesprovider.presentation.theme.DarkNavyText
 import com.haze.servicesprovider.presentation.theme.ErrorRed
 import com.haze.servicesprovider.presentation.theme.ProfessionalBlue
@@ -61,10 +71,22 @@ fun LeadDetailBottomSheet(
     onAccept: () -> Unit,
     onReject: () -> Unit,
     onComplete: () -> Unit,
+    onSendQuotation: (visitingCharges: Double, estimatedArrival: String, notes: String?) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
+
+    var visitingChargesInput by remember {
+        mutableStateOf(if (lead.visitingCharges > 0) lead.visitingCharges.toInt().toString() else "299")
+    }
+    var arrivalTimeInput by remember {
+        mutableStateOf(lead.estimatedArrival ?: "Within 2 Hours")
+    }
+    var notesInput by remember {
+        mutableStateOf(lead.providerNotes ?: "")
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -77,8 +99,9 @@ fun LeadDetailBottomSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 36.dp)
+                .verticalScroll(scrollState)
         ) {
-            // Header with status
+            // Header with status & close
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -95,7 +118,7 @@ fun LeadDetailBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Customer Name & Title
             Text(
@@ -116,15 +139,23 @@ fun LeadDetailBottomSheet(
                 )
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Details Box
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                color = ProfessionalBlueLight.copy(alpha = 0.4f)
+                color = ProfessionalBlueLight.copy(alpha = 0.45f)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    DetailRow(
+                        icon = Icons.Default.LocationOn,
+                        label = "City & Address",
+                        value = "${lead.city}${if (!lead.customerAddress.isNullOrBlank()) " • " + lead.customerAddress else ""}"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     DetailRow(
                         icon = Icons.Default.Call,
                         label = "Contact Number",
@@ -147,32 +178,121 @@ fun LeadDetailBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Description / Note
+            // Description / Customer Requirement
             Text(
-                text = "Service Details & Requirements",
+                text = "Customer Requirements",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = DarkNavyText
                 )
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = lead.description.ifBlank { "No additional requirements specified by customer." },
+                text = lead.description.ifBlank { "Service requested via Haze Customer Directory." },
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = SecondaryText,
-                    lineHeight = 22.sp
+                    lineHeight = 20.sp
                 )
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            // Quotation Form for NEW or QUOTED leads
+            if (lead.status == LeadStatus.NEW || lead.status == LeadStatus.QUOTED) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = if (lead.status == LeadStatus.QUOTED) "Your Sent Quotation" else "Send Service Quotation to Customer",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = DarkNavyText
+                            )
+                        )
+                        Text(
+                            text = "Customer will see your estimated charge and arrival time instantly.",
+                            style = MaterialTheme.typography.bodySmall.copy(color = SecondaryText)
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Visiting Charge Field
+                        OutlinedTextField(
+                            value = visitingChargesInput,
+                            onValueChange = { visitingChargesInput = it.filter { ch -> ch.isDigit() } },
+                            label = { Text("Visiting / Service Charge (₹)") },
+                            leadingIcon = {
+                                Icon(Icons.Default.CurrencyRupee, contentDescription = null, tint = ProfessionalBlue)
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Estimated Arrival Time Field
+                        OutlinedTextField(
+                            value = arrivalTimeInput,
+                            onValueChange = { arrivalTimeInput = it },
+                            label = { Text("Estimated Arrival (e.g. Today 4 PM / Within 1 Hr)") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Schedule, contentDescription = null, tint = ProfessionalBlue)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Optional Note
+                        OutlinedTextField(
+                            value = notesInput,
+                            onValueChange = { notesInput = it },
+                            label = { Text("Note for Customer (Optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 2,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Button(
+                            onClick = {
+                                val charges = visitingChargesInput.toDoubleOrNull() ?: 0.0
+                                onSendQuotation(charges, arrivalTimeInput.ifBlank { "Within 2 Hours" }, notesInput)
+                                onDismissRequest()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D28D9)) // Royal Purple
+                        ) {
+                            Text(
+                                text = if (lead.status == LeadStatus.QUOTED) "Update Quotation" else "Send Quotation (₹$visitingChargesInput)",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Actions depending on current status
             when (lead.status) {
-                LeadStatus.NEW -> {
+                LeadStatus.NEW, LeadStatus.QUOTED -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -200,9 +320,9 @@ fun LeadDetailBottomSheet(
                                 .weight(1f)
                                 .height(50.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = ProfessionalBlue)
+                            colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
                         ) {
-                            Text(text = "Accept Lead", fontWeight = FontWeight.SemiBold)
+                            Text(text = "Accept Direct", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -221,7 +341,7 @@ fun LeadDetailBottomSheet(
                         Text(text = "Mark as Completed", fontWeight = FontWeight.SemiBold)
                     }
                 }
-                LeadStatus.COMPLETED, LeadStatus.REJECTED -> {
+                LeadStatus.COMPLETED, LeadStatus.REJECTED, LeadStatus.CANCELLED -> {
                     Button(
                         onClick = onDismissRequest,
                         modifier = Modifier
@@ -230,7 +350,7 @@ fun LeadDetailBottomSheet(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = ProfessionalBlue)
                     ) {
-                        Text(text = "Done", fontWeight = FontWeight.SemiBold)
+                        Text(text = "Close", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
