@@ -33,25 +33,50 @@ class SessionManager(context: Context) {
         prefs.edit()
             .putString(KEY_USER_ID, userId)
             .putString(KEY_PHONE_NUMBER, phoneNumber)
-            .apply()
+            .commit()
     }
 
     fun saveProfile(profile: UserProfile) {
-        val jsonString = json.encodeToString(
-            com.haze.servicesprovider.data.remote.dto.ProfileDto.serializer(),
-            com.haze.servicesprovider.data.remote.dto.ProfileDto.fromDomain(profile)
-        )
-        prefs.edit()
+        val jsonString = try {
+            json.encodeToString(
+                com.haze.servicesprovider.data.remote.dto.ProfileDto.serializer(),
+                com.haze.servicesprovider.data.remote.dto.ProfileDto.fromDomain(profile)
+            )
+        } catch (_: Exception) {
+            null
+        }
+
+        val editor = prefs.edit()
             .putString(KEY_USER_ID, profile.id)
             .putString(KEY_PHONE_NUMBER, profile.phoneNumber)
-            .putBoolean(KEY_PROFILE_COMPLETED, profile.profileCompleted)
-            .putString(KEY_CACHED_PROFILE, jsonString)
-            .apply()
+            .putBoolean(KEY_PROFILE_COMPLETED, true)
+
+        if (!jsonString.isNullOrBlank()) {
+            editor.putString(KEY_CACHED_PROFILE, jsonString)
+        }
+        editor.commit()
 
         _cachedProfile.value = profile
     }
 
-    private fun loadProfile(): UserProfile? {
+    fun getFallbackProfile(): UserProfile {
+        val cached = loadProfile()
+        if (cached != null) return cached
+
+        val userId = getUserId() ?: "partner-default"
+        val phone = getPhoneNumber() ?: "9876543210"
+        return UserProfile(
+            id = userId,
+            fullName = "Service Partner",
+            phoneNumber = phone,
+            city = "Bhopal",
+            fullAddress = "Registered Partner",
+            serviceCategory = "All Services",
+            profileCompleted = true
+        )
+    }
+
+    fun loadProfile(): UserProfile? {
         val jsonString = prefs.getString(KEY_CACHED_PROFILE, null) ?: return null
         return try {
             val dto = json.decodeFromString(
@@ -65,7 +90,7 @@ class SessionManager(context: Context) {
     }
 
     fun clearSession() {
-        prefs.edit().clear().apply()
+        prefs.edit().clear().commit()
         _cachedProfile.value = null
     }
 

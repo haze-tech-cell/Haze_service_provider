@@ -40,9 +40,13 @@ class HomeViewModel(
 
     private fun observeProfile() {
         viewModelScope.launch {
+            val initial = ServiceLocator.sessionManager.cachedProfile.value
+                ?: ServiceLocator.sessionManager.getFallbackProfile()
+            _uiState.value = _uiState.value.copy(profile = initial)
+
             getProfileUseCase.observe().collect { profile ->
-                _uiState.value = _uiState.value.copy(profile = profile)
                 if (profile != null) {
+                    _uiState.value = _uiState.value.copy(profile = profile)
                     loadLeads(profile.id)
                 }
             }

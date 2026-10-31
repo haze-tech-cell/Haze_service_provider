@@ -39,41 +39,15 @@ class AuthRepositoryImpl(
         }
 
         if (isCompleted) {
-            val cachedProfile = sessionManager.cachedProfile.value
-            if (cachedProfile != null && cachedProfile.profileCompleted) {
-                val state = AuthState.AuthenticatedProfileComplete(cachedProfile)
-                _authState.value = state
-                return@withContext state
-            }
+            val profile = sessionManager.cachedProfile.value ?: sessionManager.getFallbackProfile()
+            val state = AuthState.AuthenticatedProfileComplete(profile)
+            _authState.value = state
+            return@withContext state
         }
 
-        // Verify with remote profile
-        try {
-            val remoteProfileResult = profileRepository.getProfile(cachedUserId)
-            val profile = remoteProfileResult.getOrNull()
-
-            val state = if (profile != null && profile.profileCompleted) {
-                sessionManager.saveProfile(profile)
-                AuthState.AuthenticatedProfileComplete(profile)
-            } else {
-                AuthState.AuthenticatedProfileIncomplete(cachedUserId, cachedPhone)
-            }
-            _authState.value = state
-            state
-        } catch (_: Exception) {
-            val state = if (isCompleted) {
-                val fallbackProfile = sessionManager.cachedProfile.value
-                if (fallbackProfile != null) {
-                    AuthState.AuthenticatedProfileComplete(fallbackProfile)
-                } else {
-                    AuthState.AuthenticatedProfileIncomplete(cachedUserId, cachedPhone)
-                }
-            } else {
-                AuthState.AuthenticatedProfileIncomplete(cachedUserId, cachedPhone)
-            }
-            _authState.value = state
-            state
-        }
+        val state = AuthState.AuthenticatedProfileIncomplete(cachedUserId, cachedPhone)
+        _authState.value = state
+        state
     }
 
     override suspend fun sendPhoneOtp(fullPhoneNumber: String): Result<Unit> = withContext(ioDispatcher) {

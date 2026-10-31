@@ -122,7 +122,7 @@ fun HazeNavGraph(
                 phoneNumber = phoneNumber,
                 onRegistrationSuccess = {
                     navController.navigate(Screen.RegistrationSuccess.route) {
-                        popUpTo(Screen.BusinessRegistration.route) { inclusive = true }
+                        popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 },
                 viewModel = registrationViewModel
@@ -134,7 +134,8 @@ fun HazeNavGraph(
             RegistrationSuccessScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.RegistrationSuccess.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
