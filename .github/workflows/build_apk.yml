@@ -1,0 +1,54 @@
+name: Build & Release Haze Service Provider APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build APK & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Setup Supabase Environment & local.properties
+        run: |
+          echo "SUPABASE_URL=https://aqksqqjoioztotizzvad.supabase.co" >> local.properties
+          echo "SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxa3NxcWpvaW96dG90aXp6dmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDQ5NTMsImV4cCI6MjEwOTAyMDk1M30.7TzA1HP9nry7bCpD1m23xX0m7q1ZakReiGxVf5deHeU" >> local.properties
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Build Debug APK
+        run: |
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk HazeServiceProvider.apk
+
+      - name: Publish Direct APK Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Haze Services Provider App (Latest)"
+          body: |
+            ##  Haze Service Provider App - Latest Build
+            - Built automatically from commit: ${{ github.sha }}
+            - Features: Real-time City Lead Routing, Visiting Charges & Estimated Arrival Quotation System.
+          files: HazeServiceProvider.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
