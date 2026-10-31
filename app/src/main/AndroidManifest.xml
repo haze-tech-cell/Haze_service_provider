@@ -21,6 +21,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".CrashReportActivity"
+            android:exported="false"
+            android:process=":crash_reporter"
+            android:theme="@style/Theme.HazeServiceProvider" />
     </application>
 
 </manifest>
