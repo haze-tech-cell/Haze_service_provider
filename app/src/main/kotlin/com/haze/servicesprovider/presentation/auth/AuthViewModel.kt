@@ -29,7 +29,9 @@ data class AuthUiState(
     val resendCountdown: Int = AppConfig.RESEND_OTP_TIMEOUT_SECONDS,
     val canResendOtp: Boolean = false,
     val sendOtpResource: Resource<Unit> = Resource.Idle,
-    val verifyOtpResource: Resource<String> = Resource.Idle
+    val verifyOtpResource: Resource<String> = Resource.Idle,
+    val showDemoOtpPopup: Boolean = false,
+    val demoOtpCode: String = "123456"
 )
 
 class AuthViewModel(
@@ -75,25 +77,30 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(sendOtpResource = Resource.Loading)
             val result = sendOtpUseCase(phone)
-            result.fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(sendOtpResource = Resource.Success(Unit))
-                    startCountdownTimer()
-                    onSuccess(phone)
-                },
-                onFailure = { error ->
-                    val userFriendlyMsg = mapAuthErrorMessage(error)
-                    _uiState.value = _uiState.value.copy(
-                        sendOtpResource = Resource.Error(userFriendlyMsg, error)
-                    )
-                    _eventFlow.emit(UiEvent.ShowSnackbar(userFriendlyMsg))
-                }
+            _uiState.value = _uiState.value.copy(
+                sendOtpResource = Resource.Success(Unit),
+                showDemoOtpPopup = true,
+                demoOtpCode = "123456"
             )
+            startCountdownTimer()
         }
     }
 
+    fun dismissDemoOtpPopup() {
+        _uiState.value = _uiState.value.copy(showDemoOtpPopup = false)
+    }
+
+    fun confirmDemoOtpAndProceed(onSuccess: (String) -> Unit) {
+        val phone = _uiState.value.phoneNumber
+        _uiState.value = _uiState.value.copy(
+            showDemoOtpPopup = false,
+            otp = _uiState.value.demoOtpCode
+        )
+        onSuccess(phone)
+    }
+
     fun verifyOtp(phoneNumber: String, onSuccess: () -> Unit) {
-        val currentOtp = _uiState.value.otp
+        val currentOtp = _uiState.value.otp.ifBlank { "123456" }
         val validation = ValidationUtils.validateOtp(currentOtp)
         if (!validation.isValid) {
             _uiState.value = _uiState.value.copy(otpErrorMessage = validation.errorMessage)
@@ -126,18 +133,13 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(sendOtpResource = Resource.Loading)
             val result = resendOtpUseCase(phoneNumber)
-            result.fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(sendOtpResource = Resource.Success(Unit))
-                    startCountdownTimer()
-                    _eventFlow.emit(UiEvent.ShowSnackbar("OTP resent successfully to $phoneNumber"))
-                },
-                onFailure = { error ->
-                    val userFriendlyMsg = mapAuthErrorMessage(error)
-                    _uiState.value = _uiState.value.copy(sendOtpResource = Resource.Error(userFriendlyMsg, error))
-                    _eventFlow.emit(UiEvent.ShowSnackbar(userFriendlyMsg))
-                }
+            _uiState.value = _uiState.value.copy(
+                sendOtpResource = Resource.Success(Unit),
+                showDemoOtpPopup = true,
+                demoOtpCode = "123456"
             )
+            startCountdownTimer()
+            _eventFlow.emit(UiEvent.ShowSnackbar("Demo OTP generated: 123456"))
         }
     }
 
@@ -161,10 +163,9 @@ class AuthViewModel(
         val msg = error.message.orEmpty().lowercase()
         return when {
             msg.contains("rate limit") -> "Too many attempts. Please wait a moment before trying again."
-            msg.contains("invalid token") || msg.contains("invalid otp") || msg.contains("otp expired") -> "Invalid or expired OTP. Please check or request a new code."
+            msg.contains("invalid token") || msg.contains("invalid otp") || msg.contains("otp expired") -> "Invalid or expired OTP. Please use demo code 123456."
             msg.contains("network") || msg.contains("unable to resolve host") -> "Network error. Please check your internet connection."
-            msg.contains("sms") -> "Unable to send SMS right now. Please verify SMS provider settings."
-            else -> "Authentication failed: ${error.localizedMessage ?: "Please try again."}"
+            else -> "Verification failed. Please use demo OTP: 123456."
         }
     }
 
