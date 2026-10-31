@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+        <!-- Shield Background -->
+        <path
+            android:pathData="M54,6 C64,6 94,15 94,29 L94,63 C94,83 71,98 54,105 C37,98 14,83 14,63 L14,29 C14,15 44,6 54,6 Z"
+            android:fillColor="#0D47A1" />
+        <!-- Inner Pillar Left -->
+        <path
+            android:pathData="M38,36 L44,36 C45.6,36 47,37.4 47,39 L47,73 C47,74.6 45.6,76 44,76 L38,76 C36.4,76 35,74.6 35,73 L35,39 C35,37.4 36.4,36 38,36 Z"
+            android:fillColor="#FFFFFF" />
+        <!-- Inner Pillar Right -->
+        <path
+            android:pathData="M64,30 L70,30 C71.6,30 73,31.4 73,33 L73,73 C73,74.6 71.6,76 70,76 L64,76 C62.4,76 61,74.6 61,73 L61,33 C61,31.4 62.4,30 64,30 Z"
+            android:fillColor="#FFFFFF" />
+        <!-- Connector -->
+        <path
+            android:pathData="M44,52 L64,52 C65.6,52 67,53.4 67,55 L67,57 C67,58.6 65.6,60 64,60 L44,60 C42.4,60 41,58.6 41,57 L41,55 C41,53.4 42.4,52 44,52 Z"
+            android:fillColor="#38BDF8" />
+        <!-- Growth Star -->
+        <path
+            android:pathData="M67,22 L68.5,25.5 L72,26.5 L69.5,29 L70.5,32.5 L67,31 L63.5,32.5 L64.5,29 L62,26.5 L65.5,25.5 Z"
+            android:fillColor="#10B981" />
+    </group>
+</vector>
