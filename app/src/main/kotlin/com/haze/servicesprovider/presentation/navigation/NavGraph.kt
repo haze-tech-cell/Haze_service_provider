@@ -43,9 +43,12 @@ fun HazeNavGraph(
     val profileViewModel: ProfileViewModel = viewModel()
     val settingsViewModel: SettingsViewModel = viewModel()
 
+    val isCompleted = com.haze.servicesprovider.di.ServiceLocator.sessionManager.isProfileCompleted()
+    val startRoute = if (isCompleted) Screen.Home.route else Screen.Splash.route
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route,
+        startDestination = startRoute,
         modifier = modifier
     ) {
         // Splash Screen
@@ -124,8 +127,11 @@ fun HazeNavGraph(
             BusinessRegistrationScreen(
                 phoneNumber = phoneNumber,
                 onRegistrationSuccess = {
-                    navController.navigate(Screen.RegistrationSuccess.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
                     }
                 },
                 viewModel = registrationViewModel
@@ -138,7 +144,7 @@ fun HazeNavGraph(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
-                            inclusive = true
+                            inclusive = false
                         }
                         launchSingleTop = true
                     }

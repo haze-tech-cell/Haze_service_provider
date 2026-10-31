@@ -1,7 +1,5 @@
 package com.haze.servicesprovider.presentation.home
 
-import android.app.Activity
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,14 +73,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val profile = uiState.profile
-    val context = LocalContext.current
-
-    val activity = context as? Activity
-
-    // On home screen, pressing back minimizes app instead of crashing or popping out
-    BackHandler(enabled = activity != null) {
-        activity?.moveTaskToBack(true)
-    }
 
     Scaffold(
         bottomBar = {
