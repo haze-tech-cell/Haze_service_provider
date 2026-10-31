@@ -15,12 +15,12 @@ data class UserProfile(
     val updatedAt: String? = null
 ) {
     val displayCategory: String
-        get() = if (serviceCategory.equals("Other", ignoreCase = true) && !customServiceCategory.isNullOrBlank()) {
-            customServiceCategory
+        get() = if (serviceCategory?.equals("Other", ignoreCase = true) == true && !customServiceCategory.isNullOrBlank()) {
+            customServiceCategory ?: "Service"
         } else {
-            serviceCategory
+            serviceCategory ?: "Service"
         }
 
     val firstName: String
-        get() = fullName.trim().split(" ").firstOrNull().orEmpty().ifBlank { "Partner" }
+        get() = fullName?.trim()?.split(" ")?.firstOrNull().orEmpty().ifBlank { "Partner" }
 }

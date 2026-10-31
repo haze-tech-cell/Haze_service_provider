@@ -54,16 +54,19 @@ fun HazeNavGraph(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToMobileRegistration = {
                     navController.navigate(Screen.MobileRegistration.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToCompleteRegistration = { phone ->
                     navController.navigate(Screen.BusinessRegistration.createRoute(phone)) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -134,7 +137,9 @@ fun HazeNavGraph(
             RegistrationSuccessScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            inclusive = true
+                        }
                         launchSingleTop = true
                     }
                 }
@@ -224,7 +229,10 @@ fun HazeNavGraph(
                 onNavigateToTerms = { navController.navigate(Screen.TermsConditions.route) },
                 onLoggedOut = {
                     navController.navigate(Screen.MobileRegistration.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
                     }
                 },
                 viewModel = settingsViewModel

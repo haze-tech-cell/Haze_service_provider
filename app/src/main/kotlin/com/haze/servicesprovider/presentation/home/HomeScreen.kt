@@ -22,16 +22,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -81,9 +78,11 @@ fun HomeScreen(
     val profile = uiState.profile
     val context = LocalContext.current
 
+    val activity = context as? Activity
+
     // On home screen, pressing back minimizes app instead of crashing or popping out
-    BackHandler {
-        (context as? Activity)?.moveTaskToBack(true)
+    BackHandler(enabled = activity != null) {
+        activity?.moveTaskToBack(true)
     }
 
     Scaffold(
@@ -239,7 +238,7 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Campaign,
+                                imageVector = Icons.Default.Star,
                                 contentDescription = "Ad Space",
                                 tint = ProfessionalBlue,
                                 modifier = Modifier.size(32.dp)
@@ -292,7 +291,7 @@ fun HomeScreen(
                     )
                     QuickActionCard(
                         title = "Customer Leads",
-                        icon = Icons.AutoMirrored.Filled.Assignment,
+                        icon = Icons.Default.List,
                         onClick = onNavigateToLeads,
                         modifier = Modifier.weight(1f)
                     )
@@ -343,7 +342,7 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Inbox,
+                                imageVector = Icons.Default.Notifications,
                                 contentDescription = null,
                                 tint = SecondaryText,
                                 modifier = Modifier.size(36.dp)

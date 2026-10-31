@@ -7,13 +7,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.outlined.Assignment
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,21 +46,21 @@ sealed class BottomNavTab(
         route = "home",
         title = "Home",
         selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
+        unselectedIcon = Icons.Filled.Home
     )
 
     data object Leads : BottomNavTab(
         route = "leads",
         title = "Leads",
-        selectedIcon = Icons.AutoMirrored.Filled.Assignment,
-        unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
+        selectedIcon = Icons.Filled.List,
+        unselectedIcon = Icons.Filled.List
     )
 
     data object Settings : BottomNavTab(
         route = "settings",
         title = "Settings",
         selectedIcon = Icons.Filled.Settings,
-        unselectedIcon = Icons.Outlined.Settings
+        unselectedIcon = Icons.Filled.Settings
     )
 
     companion object {
@@ -145,7 +142,7 @@ fun HazeTopAppBar(
             if (onBackClick != null) {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = DarkNavyText
                     )
