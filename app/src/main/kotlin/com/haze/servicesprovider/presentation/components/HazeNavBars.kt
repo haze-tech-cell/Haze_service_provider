@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haze.servicesprovider.presentation.theme.DarkNavyText
 import com.haze.servicesprovider.presentation.theme.ProfessionalBlue
+import com.haze.servicesprovider.presentation.theme.ProfessionalBlueLight
 import com.haze.servicesprovider.presentation.theme.PureWhite
 import com.haze.servicesprovider.presentation.theme.SecondaryText
 
@@ -79,48 +81,42 @@ fun HazeBottomNavBar(
         listOf(BottomNavTab.Home, BottomNavTab.Leads, BottomNavTab.Settings)
     }
 
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(elevation = 12.dp),
-        color = PureWhite
+    NavigationBar(
+        modifier = modifier.shadow(elevation = 16.dp),
+        containerColor = PureWhite,
+        tonalElevation = 8.dp,
+        windowInsets = NavigationBarDefaults.windowInsets
     ) {
-        NavigationBar(
-            containerColor = PureWhite,
-            tonalElevation = 0.dp,
-            modifier = Modifier.height(68.dp)
-        ) {
-            navTabs.forEach { tab ->
-                val isSelected = currentRoute == tab.route
+        navTabs.forEach { tab ->
+            val isSelected = currentRoute == tab.route
 
-                NavigationBarItem(
-                    selected = isSelected,
-                    onClick = { onTabSelected(tab) },
-                    icon = {
-                        Icon(
-                            imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                            contentDescription = tab.title,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = tab.title,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 11.sp
-                            )
-                        )
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = ProfessionalBlue,
-                        unselectedIconColor = SecondaryText,
-                        selectedTextColor = ProfessionalBlue,
-                        unselectedTextColor = SecondaryText,
-                        indicatorColor = ProfessionalBlue.copy(alpha = 0.12f)
+            NavigationBarItem(
+                selected = isSelected,
+                onClick = { onTabSelected(tab) },
+                icon = {
+                    Icon(
+                        imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                        contentDescription = tab.title,
+                        modifier = Modifier.size(24.dp)
                     )
+                },
+                label = {
+                    Text(
+                        text = tab.title,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 11.5.sp
+                        )
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = ProfessionalBlue,
+                    unselectedIconColor = SecondaryText,
+                    selectedTextColor = ProfessionalBlue,
+                    unselectedTextColor = SecondaryText,
+                    indicatorColor = ProfessionalBlueLight
                 )
-            }
+            )
         }
     }
 }
