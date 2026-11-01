@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -64,7 +65,7 @@ sealed class BottomNavTab(
     )
 
     companion object {
-        val items = listOf(Home, Leads, Settings)
+        fun getItems(): List<BottomNavTab> = listOf(Home, Leads, Settings)
     }
 }
 
@@ -74,6 +75,10 @@ fun HazeBottomNavBar(
     onTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val navTabs = remember {
+        listOf(BottomNavTab.Home, BottomNavTab.Leads, BottomNavTab.Settings)
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -85,7 +90,7 @@ fun HazeBottomNavBar(
             tonalElevation = 0.dp,
             modifier = Modifier.height(68.dp)
         ) {
-            BottomNavTab.items.forEach { tab ->
+            navTabs.forEach { tab ->
                 val isSelected = currentRoute == tab.route
 
                 NavigationBarItem(
